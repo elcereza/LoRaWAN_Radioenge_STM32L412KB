@@ -793,8 +793,11 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_USART1_UART_Init();
-  /* USER CODE BEGIN 2 */
 
+  /* USER CODE BEGIN 2 */
+  LoRaWAN_Begin(1);
+  pinMode(2, OUTPUT);
+  JOIN();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -802,14 +805,6 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
-	  static uint8_t init = 0;
-	  if(init < 1){
-		  LoRaWAN_Begin(1);
-		  pinMode(2, OUTPUT);
-		  JOIN();
-		  ++init;
-	  }
 
 	  SendString("elcereza.com", 1);
 
