@@ -16,3 +16,5 @@ Existem pontos de melhorias que da para serem feitos no código que montei, afin
 Essas estruturas são extremamentes importantes para o código montado dentro da IDE, pois há um autogerador de código dentro da IDE e caso você não respeite isso, poderá perder o código que foi montado. Se por exemplo você cria seus '#defines' fora desses comentários, é certo que perderá seu código a qualquer atualização do autogerador...
 
 O diretório do código fica em: [Core/Src/main.c](https://github.com/elcereza/LoRaWAN_Radioenge_STM32L412KB/blob/main/Core/Src/main.c)
+
+Para mais informações, assista este vídeo: https://youtu.be/JPEG9oSDyiA
