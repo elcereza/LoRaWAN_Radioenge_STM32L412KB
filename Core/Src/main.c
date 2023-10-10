@@ -458,6 +458,7 @@ void printParameters(void){
 
 void LoRaWAN_Begin(uint8_t _feedback){
   feedback = _feedback;
+  printParameters();
 }
 
 char* DADDR(char* val){
