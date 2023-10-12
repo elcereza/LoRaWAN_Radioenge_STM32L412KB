@@ -154,6 +154,7 @@ uint8_t array[BUFFER_SIZE];
 char* payloads[5];
 uint8_t port = 1, confirmado = 0, retries = 0;
 int periodicidade = 0;
+uint8_t buffer_err = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -249,7 +250,6 @@ char* UART_ReadString(UART_HandleTypeDef *huart){
 	uint8_t received_data = 0;
 	uint8_t buffer_pData[1024];
 	uint32_t count = 0;
-	static uint8_t count_err = 0;
 
 	while(1){
 		int response = HAL_UART_Receive(huart, &received_data, 1, 1000);
@@ -265,16 +265,17 @@ char* UART_ReadString(UART_HandleTypeDef *huart){
 					++count;
 				}
 			}
-			count_err = 0;
 		}
-		else if(HAL_ERROR == response)
-			NVIC_SystemReset();
-		else if(HAL_BUSY == response)
+		else if(HAL_ERROR == response){
+			buffer_err = HAL_ERROR;
+			return "HAL_ERROR";
+		}
+		else if(HAL_BUSY == response){
+			buffer_err = HAL_BUSY;
 			return "HAL_BUSY";
+		}
 		else if(HAL_TIMEOUT == response){
-			if(count_err > 3)
-				NVIC_SystemReset();
-			++count_err;
+			buffer_err = HAL_TIMEOUT;
 			return "HAL_TIMEOUT";
 		}
 	}
@@ -289,6 +290,7 @@ char* UART_ReadString(UART_HandleTypeDef *huart){
 
 	char* buffer_val = val_string;
 	free(val_string);
+	buffer_err = HAL_OK;
 	return buffer_val;
 }
 
@@ -300,26 +302,34 @@ char* feedbackSerial(char* val, uint8_t exception){
 
   UART_WriteString(&huart1, val);
   char* buff;
-  uint8_t count = 0;
+  uint8_t count = 8;
+  static uint8_t count_err = 0;
 
   while(1){
 	  buff = UART_ReadString(&huart1);
+
+	  if(count_err >= 3)
+		  NVIC_SystemReset();
+	  else if(buffer_err != HAL_OK)
+		  ++count_err;
+	  else
+		  count_err = 0;
+
 	  if(exception == 0){
-		  if(indexOf(buff, "E") > 0)
+		  if(indexOf(buff, 'E') == indexOf(buff, 'R') - 1)
 			  return "";
 	      break;
 	  }
 	  else{
-		  if(indexOf(buff, "E") > 0 && count > 0)
-			  count -= 1;
-	          else if(count <= 0)
-	              break;
-	          else if(buff == "AT_JOIN_OK" || buff == "AT_ALREADY_JOINED")
-	              break;
+		  if(indexOf(buff, 'E') > 0 && indexOf(buff, 'D') < 0 && count > 0)
+			count -= 1;
+	      else if(count <= 0)
+	        break;
+	      else if(indexOf(buff, 'K') > 0 || indexOf(buff, 'D') == indexOf(buff, 'N') + 2 || indexOf(buff, 'Y') > 0){
+	    	  connected = 1;
+	    	  break;
+	      }
 	  }
-	  if(buff == "" || buff == NULL || buff == "\0")
-		  break;
-
   }
 
   if(feedback == 1){
@@ -567,12 +577,7 @@ uint8_t CLASS(uint8_t val){
 
 uint8_t JOIN(void){
   char* buff = commandAT(_JOIN_, "", 1);
-  if(indexOf(buff, 'D') > 0 || indexOf(buff, 'K') > 0){
-    connected = 1;
-    return connected;
-  }
-
-  return 0;
+  return connected;
 }
 
 uint8_t AJOIN(uint8_t val){
